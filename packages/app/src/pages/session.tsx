@@ -11,9 +11,11 @@ import {
   on,
   createRenderEffect,
   batch,
+  createSignal,
 } from "solid-js"
 
 import { Dynamic } from "solid-js/web"
+import { usePlatform } from "@/context/platform"
 import { useLocal, type LocalFile } from "@/context/local"
 import { createStore } from "solid-js/store"
 import { PromptInput } from "@/components/prompt-input"
@@ -69,6 +71,9 @@ export default function Page() {
   const navigate = useNavigate()
   const sdk = useSDK()
   const prompt = usePrompt()
+  const platform = usePlatform()
+
+  const [showPrompt, setShowPrompt] = createSignal(true)
 
   const sessionKey = createMemo(() => `${params.dir}${params.id ? "/" + params.id : ""}`)
   const tabs = createMemo(() => layout.tabs(sessionKey()))
@@ -699,11 +704,13 @@ export default function Page() {
           <div class="flex-1 min-h-0 overflow-hidden">
             <DesktopSessionContent />
           </div>
-          <div class="absolute inset-x-0 bottom-8 flex flex-col justify-center items-center z-50">
+          <div class="absolute inset-x-0 bottom-8 flex flex-col justify-center items-center z-50 pointer-events-none">
             <div
               classList={{
-                "w-full px-6": true,
+                "w-full px-6 transition-all duration-200 pointer-events-auto": true,
                 "max-w-200": !showTabs(),
+                "opacity-0 translate-y-4 invisible": !showPrompt(),
+                "opacity-100 translate-y-0 visible": showPrompt(),
               }}
             >
               <PromptInput
@@ -713,6 +720,18 @@ export default function Page() {
               />
             </div>
           </div>
+          <Show when={platform.platform === "web"}>
+            <div class="absolute bottom-4 right-4 z-50">
+              <Tooltip value={showPrompt() ? "Hide prompt" : "Show prompt"} placement="left">
+                <IconButton
+                  icon="chevron-down"
+                  variant="ghost"
+                  onClick={() => setShowPrompt(!showPrompt())}
+                  class={!showPrompt() ? "rotate-180" : ""}
+                />
+              </Tooltip>
+            </div>
+          </Show>
           <Show when={showTabs()}>
             <ResizeHandle
               direction="horizontal"
